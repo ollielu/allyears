@@ -1,4 +1,5 @@
 import { YearlyCalendar } from './components/YearlyCalendar';
+import { InstallPrompt } from './components/InstallPrompt';
 import { useEvents } from './hooks/useEvents';
 import { useTheme } from './hooks/useTheme';
 
@@ -25,6 +26,7 @@ function App() {
         updateEvent={updateEvent}
         deleteEvent={deleteEvent}
       />
+      <InstallPrompt />
     </div>
   );
 }
