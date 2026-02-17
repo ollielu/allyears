@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sun, Moon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sun, Moon, ChevronLeft, ChevronRight, ListTodo } from 'lucide-react';
 import { MonthCard } from './MonthCard';
 import { EventModal } from './EventModal';
 
@@ -11,7 +11,7 @@ const YEAR_RANGE = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MONTHS_PER_PAGE = 3;
 const TOTAL_PAGES = 4;
 
-export function YearlyCalendar({ isDark, onToggleTheme, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
+export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [weekdayFormat, setWeekdayFormat] = useState('zh');
@@ -59,8 +59,17 @@ export function YearlyCalendar({ isDark, onToggleTheme, getEventCount, getPrimar
           </div>
           <button
             type="button"
+            onClick={onOpenTaskManagement}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-200'}`}
+            aria-label="任務管理"
+            title="任務管理"
+          >
+            <ListTodo size={18} /> 任務管理
+          </button>
+          <button
+            type="button"
             onClick={onToggleTheme}
-            className={`ml-auto p-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
+            className={`p-2 rounded-lg transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'}`}
             aria-label={isDark ? '切換為亮色' : '切換為暗色'}
             title={isDark ? '亮色模式' : '暗色模式'}
           >

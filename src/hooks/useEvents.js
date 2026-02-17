@@ -89,6 +89,77 @@ export function useEvents() {
     return sorted[0];
   }, [events]);
 
+  /** 取得所有事件列表，每筆含 dateKey，供任務管理頁使用 */
+  const getAllEventsList = useCallback(() => {
+    return Object.entries(events).flatMap(([dateKey, list]) =>
+      (list || []).map((e) => ({ ...e, dateKey }))
+    ).sort((a, b) => {
+      const d = a.dateKey.localeCompare(b.dateKey);
+      return d !== 0 ? d : a.time.localeCompare(b.time);
+    });
+  }, [events]);
+
+  /** 批次刪除多筆事件 */
+  const batchDeleteEvents = useCallback((items) => {
+    if (!items || items.length === 0) return;
+    setEvents((prev) => {
+      const next = { ...prev };
+      for (const { dateKey, eventId } of items) {
+        const list = (next[dateKey] || []).filter((e) => e.id !== eventId);
+        if (list.length === 0) delete next[dateKey];
+        else next[dateKey] = list;
+      }
+      return next;
+    });
+  }, []);
+
+  /** 將某一事件複製到多個日期（依原事件的 title, time, isImportant, color） */
+  const copyEventToDates = useCallback((sourceDateKey, eventId, targetDateKeys) => {
+    const list = events[sourceDateKey] || [];
+    const ev = list.find((e) => e.id === eventId);
+    if (!ev || !targetDateKeys.length) return;
+    const uniqueTargets = [...new Set(targetDateKeys)].filter((d) => d !== sourceDateKey);
+    setEvents((prev) => {
+      const next = { ...prev };
+      for (const dateKey of uniqueTargets) {
+        const newEvent = {
+          id: generateId(),
+          dateKey,
+          title: ev.title,
+          time: ev.time,
+          isImportant: !!ev.isImportant,
+          color: ev.color || undefined,
+        };
+        const arr = next[dateKey] || [];
+        next[dateKey] = [...arr, newEvent];
+      }
+      return next;
+    });
+  }, [events]);
+
+  /** 將同一任務快速大量新增到多個指定日期 */
+  const addEventToDates = useCallback((dateKeys, title, time, isImportant = false, color = '') => {
+    const t = title.trim();
+    if (!t || !dateKeys.length) return;
+    const unique = [...new Set(dateKeys)];
+    setEvents((prev) => {
+      const next = { ...prev };
+      for (const dateKey of unique) {
+        const newEvent = {
+          id: generateId(),
+          dateKey,
+          title: t,
+          time: time || '00:00',
+          isImportant: !!isImportant,
+          color: color || undefined,
+        };
+        const arr = next[dateKey] || [];
+        next[dateKey] = [...arr, newEvent];
+      }
+      return next;
+    });
+  }, []);
+
   return {
     events,
     getEventsForDate,
@@ -97,5 +168,9 @@ export function useEvents() {
     updateEvent,
     deleteEvent,
     getEventCountByDate,
+    getAllEventsList,
+    batchDeleteEvents,
+    copyEventToDates,
+    addEventToDates,
   };
 }
