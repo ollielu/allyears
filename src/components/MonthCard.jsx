@@ -3,15 +3,11 @@ import { DateRow } from './DateRow';
 import { getTodayKey } from '../types/event';
 
 /**
- * 單一月份條列式直欄：日期 + 該日最重要的事件
+ * 單一月份條列式直欄：日期 + 該日事件（可選顯示全部事件）
  * @param {Object} props
- * @param {number} props.year - 西元年
- * @param {number} props.month - 月份 (1-12)
- * @param {Function} props.getEventCount - (dateKey) => number
- * @param {Function} props.getPrimaryEvent - (dateKey) => { title, time } | null
- * @param {Function} props.onDateClick - (dateKey) => void
+ * @param {boolean} props.showAllEvents - 為 true 時該日顯示所有事件（單月模式）
  */
-export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventCount, getPrimaryEvent, onDateClick }) {
+export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventCount, getPrimaryEvent, getEventsForDate, onDateClick, showAllEvents = false }) {
   const todayKey = getTodayKey();
 
   const { days, monthName } = useMemo(() => {
@@ -39,6 +35,7 @@ export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventC
             const isToday = dateKey === todayKey;
             const eventCount = getEventCount(dateKey);
             const primaryEvent = getPrimaryEvent(dateKey);
+            const events = showAllEvents && getEventsForDate ? getEventsForDate(dateKey) : null;
             const weekday = new Date(year, month - 1, day).getDay();
             return (
               <DateRow
@@ -50,6 +47,8 @@ export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventC
                 isToday={isToday}
                 primaryEvent={primaryEvent}
                 eventCount={eventCount}
+                events={events}
+                showAllEvents={showAllEvents}
                 onClick={() => onDateClick(dateKey)}
                 isEvenRow={day % 2 === 0}
               />

@@ -1,34 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sun, Moon, ChevronLeft, ChevronRight, ListTodo } from 'lucide-react';
 import { MonthCard } from './MonthCard';
 import { EventModal } from './EventModal';
 
 /**
- * 全年度行事曆主畫面：每頁 3 個月、共 4 頁，頁數選擇在上方
+ * 全年度行事曆：滑桿調整顯示 1～6 個月，單月時顯示每日所有事件
  */
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_RANGE = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
-const MONTHS_PER_PAGE = 3;
-const TOTAL_PAGES = 4;
+const MIN_MONTHS = 1;
+const MAX_MONTHS = 6;
 
 export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [weekdayFormat, setWeekdayFormat] = useState('zh');
   const [page, setPage] = useState(1);
+  const [monthsPerView, setMonthsPerView] = useState(3);
+
+  const totalPages = Math.ceil(12 / monthsPerView);
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const monthsOnPage = Array.from(
+    { length: monthsPerView },
+    (_, i) => (safePage - 1) * monthsPerView + i + 1
+  ).filter((m) => m <= 12);
 
   const selectedEvents = selectedDateKey ? getEventsForDate(selectedDateKey) : [];
 
-  const monthsOnPage = Array.from(
-    { length: MONTHS_PER_PAGE },
-    (_, i) => (page - 1) * MONTHS_PER_PAGE + i + 1
-  );
-
   const pageLabel = (p) => {
-    const start = (p - 1) * MONTHS_PER_PAGE + 1;
-    const end = Math.min(p * MONTHS_PER_PAGE, 12);
+    const start = (p - 1) * monthsPerView + 1;
+    const end = Math.min(p * monthsPerView, 12);
     return `${start}–${end} 月`;
   };
+
+  const handleMonthsPerViewChange = (v) => {
+    const n = Number(v);
+    setMonthsPerView(n);
+    setPage((p) => Math.min(p, Math.ceil(12 / n)));
+  };
+
+  useEffect(() => {
+    const maxPage = Math.ceil(12 / monthsPerView);
+    if (page > maxPage) setPage(maxPage);
+  }, [monthsPerView, page]);
 
   return (
     <>
@@ -80,46 +94,71 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, ge
           </p>
         </header>
 
-        {/* 頁數選擇：上方、方便手機操作 */}
-        <div className={`mb-4 flex items-center justify-between gap-2 rounded-xl border p-3 ${isDark ? 'border-slate-600 bg-slate-800/50' : 'border-gray-200 bg-white'}`}>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            aria-label="上一頁"
-          >
-            <ChevronLeft size={18} /> 上一頁
-          </button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                className={`min-w-[2.5rem] rounded-lg px-2 py-2 text-sm font-medium transition-colors ${page === p ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white') : (isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100')}`}
-                aria-label={`第 ${p} 頁`}
-                title={pageLabel(p)}
-              >
-                {p}
-              </button>
-            ))}
+        {/* 顯示月份數滑桿 + 頁數選擇 */}
+        <div className={`mb-4 rounded-xl border p-3 space-y-3 ${isDark ? 'border-slate-600 bg-slate-800/50' : 'border-gray-200 bg-white'}`}>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`text-sm font-medium shrink-0 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
+              顯示月份數：
+            </span>
+            <input
+              type="range"
+              min={MIN_MONTHS}
+              max={MAX_MONTHS}
+              value={monthsPerView}
+              onChange={(e) => handleMonthsPerViewChange(e.target.value)}
+              className="flex-1 min-w-[120px] h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              aria-label="顯示月份數"
+            />
+            <span className={`text-sm tabular-nums shrink-0 min-w-[4rem] ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+              {monthsPerView} 個月
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(TOTAL_PAGES, p + 1))}
-            disabled={page === TOTAL_PAGES}
-            className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            aria-label="下一頁"
-          >
-            下一頁 <ChevronRight size={18} />
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'}`}
+              aria-label="上一頁"
+            >
+              <ChevronLeft size={18} /> 上一頁
+            </button>
+            <div className="flex items-center gap-1 flex-wrap justify-center">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  className={`min-w-[2.5rem] rounded-lg px-2 py-2 text-sm font-medium transition-colors ${safePage === p ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-600 text-white') : (isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100')}`}
+                  aria-label={`第 ${p} 頁`}
+                  title={pageLabel(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:pointer-events-none ${isDark ? 'text-slate-200 hover:bg-slate-700' : 'text-gray-700 hover:bg-gray-100'}`}
+              aria-label="下一頁"
+            >
+              下一頁 <ChevronRight size={18} />
+            </button>
+          </div>
+          <p className={`text-center text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+            第 {safePage} 頁 · {pageLabel(safePage)}
+            {monthsPerView === 1 && ' · 顯示每日所有事件'}
+          </p>
         </div>
-        <p className={`mb-3 text-center text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-          第 {page} 頁 · {pageLabel(page)}
-        </p>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div
+          className="grid gap-2 sm:gap-4"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(monthsPerView, 3)}, minmax(0, 1fr))`,
+          }}
+        >
           {monthsOnPage.map((month) => (
             <MonthCard
               key={month}
@@ -129,7 +168,9 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, ge
               weekdayFormat={weekdayFormat}
               getEventCount={getEventCount}
               getPrimaryEvent={getPrimaryEventForDate}
+              getEventsForDate={getEventsForDate}
               onDateClick={setSelectedDateKey}
+              showAllEvents={monthsPerView === 1}
             />
           ))}
         </div>
