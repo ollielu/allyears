@@ -29,3 +29,86 @@ html.dark {
 #root {
   min-height: 100vh;
 }
+
+/* 字體大小：僅套用在日曆月份區塊。Tailwind 的 text-* 使用 rem，故用 inherit 覆寫讓字體隨 wrapper 縮放 */
+.calendar-font-small {
+  font-size: 14px;
+}
+.calendar-font-small * {
+  font-size: inherit !important;
+}
+.calendar-font-medium {
+  font-size: 16px;
+}
+.calendar-font-medium * {
+  font-size: inherit !important;
+}
+.calendar-font-large {
+  font-size: 18px;
+}
+.calendar-font-large * {
+  font-size: inherit !important;
+}
+
+/* 月份數滑桿：亮色 / 暗色模式都清楚可見，拇指垂直置中 */
+input[type="range"].months-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  display: block;
+  border-radius: 4px;
+  background: transparent;
+}
+input[type="range"].months-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #cbd5e1;
+}
+input[type="range"].months-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+input[type="range"].months-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #cbd5e1;
+}
+input[type="range"].months-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+}
+
+/* 暗色模式下滑桿軌道與拇指 */
+html.dark input[type="range"].months-slider::-webkit-slider-runnable-track {
+  background: #475569;
+}
+html.dark input[type="range"].months-slider {
+  background: transparent;
+}
+html.dark input[type="range"].months-slider::-webkit-slider-thumb {
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+html.dark input[type="range"].months-slider::-moz-range-thumb {
+  border-color: #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+html.dark input[type="range"].months-slider::-moz-range-track {
+  background: #475569;
+}

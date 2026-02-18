@@ -11,7 +11,7 @@ const YEAR_RANGE = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MIN_MONTHS = 1;
 const MAX_MONTHS = 6;
 
-export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
+export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fontSize, onFontSizeChange, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [weekdayFormat, setWeekdayFormat] = useState('zh');
@@ -71,6 +71,19 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, ge
               <option value="en">英文（S M T W T F S）</option>
             </select>
           </div>
+          <div className="flex items-center gap-1.5">
+            <span className={`text-sm shrink-0 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>字體：</span>
+            <select
+              value={fontSize}
+              onChange={(e) => onFontSizeChange(e.target.value)}
+              className={`text-sm border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-gray-200 bg-white text-gray-800'}`}
+              aria-label="字體大小"
+            >
+              <option value="small">小</option>
+              <option value="medium">中</option>
+              <option value="large">大</option>
+            </select>
+          </div>
           <button
             type="button"
             onClick={onOpenTaskManagement}
@@ -106,7 +119,7 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, ge
               max={MAX_MONTHS}
               value={monthsPerView}
               onChange={(e) => handleMonthsPerViewChange(e.target.value)}
-              className="flex-1 min-w-[120px] h-2 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="months-slider flex-1 min-w-[120px] cursor-pointer"
               aria-label="顯示月份數"
             />
             <span className={`text-sm tabular-nums shrink-0 min-w-[4rem] ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
@@ -154,7 +167,7 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, ge
         </div>
 
         <div
-          className="grid gap-2 sm:gap-4"
+          className={`grid gap-2 sm:gap-4 calendar-font-${fontSize}`}
           style={{
             gridTemplateColumns: `repeat(${Math.min(monthsPerView, 3)}, minmax(0, 1fr))`,
           }}
