@@ -8,7 +8,7 @@ import { useFontSize } from './hooks/useFontSize';
 
 function App() {
   const { isDark, toggleTheme } = useTheme();
-  const { fontSize, setFontSize } = useFontSize();
+  const { fontSize, setFontSize, minFontSize, maxFontSize } = useFontSize();
   const [view, setView] = useState('calendar');
   const {
     getEventCountByDate,
@@ -31,6 +31,8 @@ function App() {
           onToggleTheme={toggleTheme}
           fontSize={fontSize}
           onFontSizeChange={setFontSize}
+          minFontSize={minFontSize}
+          maxFontSize={maxFontSize}
           onOpenTaskManagement={() => setView('tasks')}
           getEventCount={getEventCountByDate}
           getPrimaryEventForDate={getPrimaryEventForDate}
@@ -44,6 +46,8 @@ function App() {
           isDark={isDark}
           fontSize={fontSize}
           onFontSizeChange={setFontSize}
+          minFontSize={minFontSize}
+          maxFontSize={maxFontSize}
           onBack={() => setView('calendar')}
           getAllEventsList={getAllEventsList}
           batchDeleteEvents={batchDeleteEvents}

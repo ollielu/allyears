@@ -11,7 +11,7 @@ const YEAR_RANGE = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MIN_MONTHS = 1;
 const MAX_MONTHS = 6;
 
-export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fontSize, onFontSizeChange, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
+export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fontSize, onFontSizeChange, minFontSize = 10, maxFontSize = 28, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [weekdayFormat, setWeekdayFormat] = useState('zh');
@@ -71,18 +71,18 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fo
               <option value="en">英文（S M T W T F S）</option>
             </select>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className={`text-sm shrink-0 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>字體：</span>
-            <select
+          <div className="flex items-center gap-2">
+            <span className={`text-sm shrink-0 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>日曆字體：</span>
+            <input
+              type="number"
+              min={minFontSize}
+              max={maxFontSize}
               value={fontSize}
               onChange={(e) => onFontSizeChange(e.target.value)}
-              className={`text-sm border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${isDark ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-gray-200 bg-white text-gray-800'}`}
-              aria-label="字體大小"
-            >
-              <option value="small">小</option>
-              <option value="medium">中</option>
-              <option value="large">大</option>
-            </select>
+              className={`w-12 text-center text-sm border rounded-lg px-1 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isDark ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-gray-200 bg-white text-gray-800'}`}
+              aria-label="日曆字體大小（px）"
+            />
+            <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>px</span>
           </div>
           <button
             type="button"
@@ -107,8 +107,8 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fo
           </p>
         </header>
 
-        {/* 顯示月份數滑桿 + 頁數選擇 */}
-        <div className={`mb-4 rounded-xl border p-3 space-y-3 ${isDark ? 'border-slate-600 bg-slate-800/50' : 'border-gray-200 bg-white'}`}>
+        {/* 顯示月份數滑桿 + 頁數選擇（字體縮小） */}
+        <div className={`calendar-controls-compact mb-4 rounded-xl border p-3 space-y-3 ${isDark ? 'border-slate-600 bg-slate-800/50' : 'border-gray-200 bg-white'}`}>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`text-sm font-medium shrink-0 ${isDark ? 'text-slate-200' : 'text-gray-800'}`}>
               顯示月份數：
@@ -167,9 +167,10 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fo
         </div>
 
         <div
-          className={`grid gap-2 sm:gap-4 calendar-font-${fontSize}`}
+          className="grid gap-2 sm:gap-4 calendar-font-scale"
           style={{
             gridTemplateColumns: `repeat(${Math.min(monthsPerView, 3)}, minmax(0, 1fr))`,
+            fontSize: `${fontSize}px`,
           }}
         >
           {monthsOnPage.map((month) => (

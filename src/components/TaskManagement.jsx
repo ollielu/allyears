@@ -61,6 +61,8 @@ export function TaskManagement({
   onBack,
   fontSize,
   onFontSizeChange,
+  minFontSize = 10,
+  maxFontSize = 28,
   getAllEventsList,
   batchDeleteEvents,
   copyEventToDates,
@@ -209,18 +211,18 @@ export function TaskManagement({
         <h1 className={`text-xl sm:text-2xl font-semibold flex items-center gap-2 ${d ? 'text-slate-100' : 'text-gray-800'}`}>
           <ListTodo size={24} /> 任務管理
         </h1>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className={`text-sm shrink-0 ${d ? 'text-slate-400' : 'text-gray-500'}`}>字體：</span>
-          <select
+        <div className="ml-auto flex items-center gap-2">
+          <span className={`text-sm shrink-0 ${d ? 'text-slate-400' : 'text-gray-500'}`}>日曆字體：</span>
+          <input
+            type="number"
+            min={minFontSize}
+            max={maxFontSize}
             value={fontSize}
             onChange={(e) => onFontSizeChange(e.target.value)}
-            className={`text-sm border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${d ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-gray-200 bg-white text-gray-800'}`}
-            aria-label="字體大小"
-          >
-            <option value="small">小</option>
-            <option value="medium">中</option>
-            <option value="large">大</option>
-          </select>
+            className={`w-12 text-center text-sm border rounded-lg px-1 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${d ? 'border-slate-600 bg-slate-800 text-slate-200' : 'border-gray-200 bg-white text-gray-800'}`}
+            aria-label="日曆字體大小（px）"
+          />
+          <span className={`text-xs shrink-0 ${d ? 'text-slate-500' : 'text-gray-400'}`}>px</span>
         </div>
       </header>
 

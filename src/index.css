@@ -30,23 +30,16 @@ html.dark {
   min-height: 100vh;
 }
 
-/* 字體大小：僅套用在日曆月份區塊。Tailwind 的 text-* 使用 rem，故用 inherit 覆寫讓字體隨 wrapper 縮放 */
-.calendar-font-small {
-  font-size: 14px;
+/* 月份滑桿與頁數選擇區：字體縮小 */
+.calendar-controls-compact {
+  font-size: 11px;
 }
-.calendar-font-small * {
-  font-size: inherit !important;
+.calendar-controls-compact * {
+  font-size: inherit;
 }
-.calendar-font-medium {
-  font-size: 16px;
-}
-.calendar-font-medium * {
-  font-size: inherit !important;
-}
-.calendar-font-large {
-  font-size: 18px;
-}
-.calendar-font-large * {
+
+/* 日曆本體字體：由 inline style 設 px，子元素繼承以覆寫 Tailwind 的 rem */
+.calendar-font-scale * {
   font-size: inherit !important;
 }
 
