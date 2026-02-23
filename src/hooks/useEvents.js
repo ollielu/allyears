@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// ------------------------------------------------------------------
+// 輔助函式
+// ------------------------------------------------------------------
+
 /** 將 Supabase 回傳的列轉成前端 state */
 function rowsToState(rows) {
   if (!Array.isArray(rows)) return {};
@@ -20,11 +24,15 @@ function rowsToState(rows) {
   return byDate;
 }
 
+// ------------------------------------------------------------------
+// 主 Hook
+// ------------------------------------------------------------------
+
 export function useEvents(supabase) {
   const [events, setEvents] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. 讀取
+  // 1. 讀取 (Load)
   const fetchEvents = useCallback(async () => {
     if (!supabase) return;
     setIsLoading(true);
@@ -43,7 +51,7 @@ export function useEvents(supabase) {
     fetchEvents();
   }, [fetchEvents]);
 
-  // 2. 新增
+  // 2. 新增 (Add)
   const addEvent = useCallback(async (dateKey, title, time, isImportant = false, color = '') => {
     if (!supabase) return;
     const newRow = {
@@ -78,7 +86,7 @@ export function useEvents(supabase) {
     }
   }, [supabase]);
 
-  // 3. 更新
+  // 3. 更新 (Update)
   const updateEvent = useCallback(async (dateKey, eventId, updates) => {
     if (!supabase) return;
     const rowUpdates = {};
@@ -104,7 +112,7 @@ export function useEvents(supabase) {
     }
   }, [supabase]);
 
-  // 4. 刪除
+  // 4. 刪除 (Delete)
   const deleteEvent = useCallback(async (dateKey, eventId) => {
     if (!supabase) return;
     try {
@@ -123,50 +131,41 @@ export function useEvents(supabase) {
     }
   }, [supabase]);
 
- // 5. 批次刪除 (Batch Delete) - 修正版
- const batchDeleteEvents = useCallback(async (items) => {
-  if (!supabase || !items.length) return;
-  
-  // 關鍵修正：同時檢查 item.id (新版) 和 item.eventId (舊版相容)
-  // 並過濾掉 undefined/null 的無效 ID
-  const idsToDelete = items
-    .map(item => item.id || item.eventId)
-    .filter(id => id !== undefined && id !== null);
+  // 5. 批次刪除 (Batch Delete) - 萬能修正版
+  const batchDeleteEvents = useCallback(async (items) => {
+    if (!supabase || !items || items.length === 0) return;
 
-  if (idsToDelete.length === 0) {
-    console.warn('批次刪除失敗：找不到有效的 ID');
-    return;
-  }
+    // 除錯日誌：讓你知道前端到底傳了什麼進來
+    console.log('準備批次刪除，收到的資料:', items);
 
-  try {
-    const { error } = await supabase
-      .from('events')
-      .delete()
-      .in('id', idsToDelete);
-    
-    if (error) throw error;
+    // 萬能 ID 提取器：不管傳物件還是純數字，都抓得出來
+    const idsToDelete = items
+      .map(item => {
+        // 情況 A: item 本身就是 ID (數字或字串)
+        if (typeof item === 'number' || typeof item === 'string') return item;
+        // 情況 B: item 是物件，嘗試讀取常見的 ID 欄位
+        return item?.id || item?.eventId || item?._id;
+      })
+      .filter(id => id !== undefined && id !== null);
 
-    // 前端更新 State
-    setEvents((prev) => {
-      const next = { ...prev };
-      items.forEach((item) => {
-        // 同樣要兼容兩種 key
-        const targetId = item.id || item.eventId;
-        const targetDateKey = item.dateKey; // 假設 dateKey 是一樣的
+    if (idsToDelete.length === 0) {
+      console.warn('批次刪除取消：解析後找不到任何有效的 ID');
+      return;
+    }
 
-        if (next[targetDateKey]) {
-          next[targetDateKey] = next[targetDateKey].filter(e => e.id !== targetId);
-          // 如果該日期沒資料了，清理掉 key
-          if (next[targetDateKey].length === 0) delete next[targetDateKey];
-        }
-      });
-      return next;
-    });
-  } catch (err) {
-    console.error('批次刪除失敗:', err);
-    alert('刪除失敗，請檢查 Console');
-  }
-}, [supabase]);
+    try {
+      const { error } = await supabase.from('events').delete().in('id', idsToDelete);
+      if (error) throw error;
+
+      // 前端狀態更新 (需要重新 fetch 或手動過濾)
+      // 最簡單且安全的方法：重新整理資料 (雖然慢一點點但保證正確)
+      fetchEvents(); 
+      
+    } catch (err) {
+      console.error('批次刪除 API 失敗:', err);
+      alert('刪除失敗，請看 Console');
+    }
+  }, [supabase, fetchEvents]);
 
   // 6. 批次新增
   const addEventToDates = useCallback(async (dateKeys, title, time, isImportant = false, color = '') => {
@@ -182,28 +181,11 @@ export function useEvents(supabase) {
     try {
       const { data, error } = await supabase.from('events').insert(rows).select();
       if (error) throw error;
-      if (data) {
-        setEvents(prev => {
-          const next = { ...prev };
-          data.forEach(row => {
-            const dKey = row.date_key;
-            if (!next[dKey]) next[dKey] = [];
-            next[dKey].push({
-              id: row.id,
-              dateKey: row.date_key,
-              title: row.title,
-              time: row.time,
-              isImportant: row.is_important,
-              color: row.color
-            });
-          });
-          return next;
-        });
-      }
+      if (data) fetchEvents(); // 直接重抓最保險
     } catch (err) {
       console.error('批次新增失敗', err);
     }
-  }, [supabase]);
+  }, [supabase, fetchEvents]);
 
   // 7. 複製事件
   const copyEventToDates = useCallback(async (sourceDateKey, eventId, targetDateKeys) => {
@@ -219,11 +201,9 @@ export function useEvents(supabase) {
     );
   }, [events, addEventToDates]);
 
-  // Helper Functions
+  // Getter Functions
   const getEventsForDate = useCallback((dateKey) => events[dateKey] || [], [events]);
-  
   const getEventCountByDate = useCallback((dateKey) => (events[dateKey] || []).length, [events]);
-
   const getPrimaryEventForDate = useCallback((dateKey) => {
     const list = events[dateKey] || [];
     if (list.length === 0) return null;
@@ -231,7 +211,6 @@ export function useEvents(supabase) {
     const candidates = important.length > 0 ? important : list;
     return [...candidates].sort((a, b) => a.time.localeCompare(b.time))[0];
   }, [events]);
-
   const getAllEventsList = useCallback(() => {
     return Object.entries(events).flatMap(([dateKey, list]) =>
       (list || []).map((e) => ({ ...e, dateKey }))
