@@ -1,43 +1,68 @@
 import { useState, useEffect, useCallback } from 'react';
-import { STORAGE_KEY, generateId } from '../types/event';
+import { generateId } from '../types/event';
 
-/**
- * 從 localStorage 讀取事件
- */
-const loadEvents = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
+/** 將 Supabase 回傳的列轉成前端 state 形狀 { [dateKey]: CalendarEvent[] } */
+function rowsToState(rows) {
+  if (!Array.isArray(rows)) return {};
+  const byDate = {};
+  for (const row of rows) {
+    const dateKey = row.date_key ?? row.dateKey;
+    if (!dateKey) continue;
+    if (!byDate[dateKey]) byDate[dateKey] = [];
+    byDate[dateKey].push({
+      id: row.id,
+      dateKey,
+      title: row.title ?? '',
+      time: row.time ?? '00:00',
+      isImportant: !!row.is_important || !!row.isImportant,
+      color: row.color ?? undefined,
+    });
   }
-};
+  return byDate;
+}
 
-/**
- * 儲存事件到 localStorage
- * @param {Object} events - { [dateKey]: CalendarEvent[] }
- */
-const saveEvents = (events) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-};
+/** 將單一事件轉成 Supabase 欄位（snake_case） */
+function eventToRow(event) {
+  return {
+    id: event.id,
+    date_key: event.dateKey,
+    title: event.title,
+    time: event.time || '00:00',
+    is_important: !!event.isImportant,
+    color: event.color ?? null,
+  };
+}
 
 /**
  * 事件管理的自訂 Hook
- * 使用 localStorage 持久化
+ * 使用 Supabase 持久化（需傳入 supabase 客戶端）
  */
-export function useEvents() {
-  const [events, setEvents] = useState(loadEvents);
+export function useEvents(supabase) {
+  const [events, setEvents] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 同步到 localStorage
+  // 掛載時從 Supabase 載入
   useEffect(() => {
-    saveEvents(events);
-  }, [events]);
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase.from('events').select('*');
+      if (cancelled) return;
+      if (!error && data) setEvents(rowsToState(data));
+      setIsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [supabase]);
 
   const getEventsForDate = useCallback((dateKey) => {
     return events[dateKey] || [];
   }, [events]);
 
-  const addEvent = useCallback((dateKey, title, time, isImportant = false, color = '') => {
+  const addEvent = useCallback(async (dateKey, title, time, isImportant = false, color = '') => {
     const newEvent = {
       id: generateId(),
       dateKey,
@@ -46,11 +71,14 @@ export function useEvents() {
       isImportant: !!isImportant,
       color: color || undefined,
     };
+    if (!supabase) return;
+    const { error } = await supabase.from('events').insert([eventToRow(newEvent)]);
+    if (error) return;
     setEvents((prev) => {
       const list = prev[dateKey] || [];
       return { ...prev, [dateKey]: [...list, newEvent] };
     });
-  }, []);
+  }, [supabase]);
 
   const updateEvent = useCallback((dateKey, eventId, updates) => {
     setEvents((prev) => {
@@ -63,7 +91,11 @@ export function useEvents() {
     });
   }, []);
 
-  const deleteEvent = useCallback((dateKey, eventId) => {
+  const deleteEvent = useCallback(async (dateKey, eventId) => {
+    if (supabase) {
+      const { error } = await supabase.from('events').delete().eq('id', eventId);
+      if (error) return;
+    }
     setEvents((prev) => {
       const list = (prev[dateKey] || []).filter((e) => e.id !== eventId);
       if (list.length === 0) {
@@ -73,7 +105,7 @@ export function useEvents() {
       }
       return { ...prev, [dateKey]: list };
     });
-  }, []);
+  }, [supabase]);
 
   const getEventCountByDate = useCallback((dateKey) => {
     return (events[dateKey] || []).length;
@@ -162,6 +194,7 @@ export function useEvents() {
 
   return {
     events,
+    isLoading,
     getEventsForDate,
     getPrimaryEventForDate,
     addEvent,

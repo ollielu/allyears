@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from './supabaseClient';
 import { YearlyCalendar } from './components/YearlyCalendar';
 import { TaskManagement } from './components/TaskManagement';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -21,7 +22,18 @@ function App() {
     batchDeleteEvents,
     copyEventToDates,
     addEventToDates,
-  } = useEvents();
+    isLoading,
+  } = useEvents(supabase);
+
+  if (isLoading) {
+    return (
+      <div className={isDark ? 'dark' : ''}>
+        <div className="flex min-h-screen items-center justify-center text-lg">
+          載入中...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={isDark ? 'dark' : ''}>
