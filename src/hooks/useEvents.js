@@ -123,28 +123,50 @@ export function useEvents(supabase) {
     }
   }, [supabase]);
 
-  // 5. 批次刪除
-  const batchDeleteEvents = useCallback(async (items) => {
-    if (!supabase || !items.length) return;
-    const idsToDelete = items.map(item => item.id);
-    try {
-      const { error } = await supabase.from('events').delete().in('id', idsToDelete);
-      if (error) throw error;
+ // 5. 批次刪除 (Batch Delete) - 修正版
+ const batchDeleteEvents = useCallback(async (items) => {
+  if (!supabase || !items.length) return;
+  
+  // 關鍵修正：同時檢查 item.id (新版) 和 item.eventId (舊版相容)
+  // 並過濾掉 undefined/null 的無效 ID
+  const idsToDelete = items
+    .map(item => item.id || item.eventId)
+    .filter(id => id !== undefined && id !== null);
 
-      setEvents((prev) => {
-        const next = { ...prev };
-        items.forEach(({ dateKey, id }) => {
-          if (next[dateKey]) {
-            next[dateKey] = next[dateKey].filter(e => e.id !== id);
-            if (next[dateKey].length === 0) delete next[dateKey];
-          }
-        });
-        return next;
+  if (idsToDelete.length === 0) {
+    console.warn('批次刪除失敗：找不到有效的 ID');
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .in('id', idsToDelete);
+    
+    if (error) throw error;
+
+    // 前端更新 State
+    setEvents((prev) => {
+      const next = { ...prev };
+      items.forEach((item) => {
+        // 同樣要兼容兩種 key
+        const targetId = item.id || item.eventId;
+        const targetDateKey = item.dateKey; // 假設 dateKey 是一樣的
+
+        if (next[targetDateKey]) {
+          next[targetDateKey] = next[targetDateKey].filter(e => e.id !== targetId);
+          // 如果該日期沒資料了，清理掉 key
+          if (next[targetDateKey].length === 0) delete next[targetDateKey];
+        }
       });
-    } catch (err) {
-      console.error('批次刪除失敗', err);
-    }
-  }, [supabase]);
+      return next;
+    });
+  } catch (err) {
+    console.error('批次刪除失敗:', err);
+    alert('刪除失敗，請檢查 Console');
+  }
+}, [supabase]);
 
   // 6. 批次新增
   const addEventToDates = useCallback(async (dateKeys, title, time, isImportant = false, color = '') => {
