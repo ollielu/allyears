@@ -25,12 +25,35 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fo
     })
   );
 
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (over && active.id !== over.id && active.data?.current?.event) {
-      moveEvent(active.id, active.data.current.event.dateKey, over.id);
-    }
+  // 在 YearlyCalendar.jsx 裡面
+
+function handleDragEnd(event) {
+  const { active, over } = event;
+
+  // 1. 如果沒有拖到任何有效的格子上，就彈回去
+  if (!over) {
+    console.log("沒有拖到有效的 Droppable 上");
+    return;
   }
+
+  // 2. 取得 ID
+  // active.id 是被拖的行程 ID
+  // over.id 應該要是日期字串 (例如 "2024-02-25")
+  const eventId = active.id;
+  const targetDateKey = over.id; 
+
+  // 3. 從 active.data 取得原始日期 (這需要在 DraggableEvent 裡設定好)
+  const sourceDateKey = active.data.current?.event?.dateKey;
+
+  console.log(`嘗試移動: ID[${eventId}] 從 [${sourceDateKey}] 到 [${targetDateKey}]`);
+
+  // 4. 如果來源跟目標不同，才執行移動
+  if (sourceDateKey && targetDateKey && sourceDateKey !== targetDateKey) {
+    // 這裡要注意：eventId 可能是字串，但資料庫可能是數字，最好轉一下
+    // moveEvent 來自 props
+    moveEvent(Number(eventId), sourceDateKey, targetDateKey); 
+  }
+}
 
   const totalPages = Math.ceil(12 / monthsPerView);
   const safePage = Math.min(Math.max(1, page), totalPages);
