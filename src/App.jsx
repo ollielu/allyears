@@ -7,6 +7,7 @@ import { InstallPrompt } from './components/InstallPrompt';
 import { useEvents } from './hooks/useEvents';
 import { useTheme } from './hooks/useTheme';
 import { useFontSize } from './hooks/useFontSize';
+import { UserMenu } from './components/UserMenu';
 
 function App() {
   const [user, setUser] = useState(null);
