@@ -92,12 +92,7 @@ function App() {
       <div className="absolute top-4 right-4 z-50">
       <UserMenu session={session} onLogout={handleLogout} />
          {/* 這裡偷放一個登出按鈕，你可以之後再美化它 */}
-         <button 
-           onClick={handleLogout}
-           className="rounded bg-red-500 px-3 py-1 text-sm text-white hover:bg-red-600 shadow-md"
-         >
-           登出
-         </button>
+        
       </div>
 
       {view === 'calendar' ? (
