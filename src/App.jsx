@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { Login } from './components/Login';
 import { YearlyCalendar } from './components/YearlyCalendar';
 import { TaskManagement } from './components/TaskManagement';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -8,6 +9,22 @@ import { useTheme } from './hooks/useTheme';
 import { useFontSize } from './hooks/useFontSize';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const { isDark, toggleTheme } = useTheme();
   const { fontSize, setFontSize, minFontSize, maxFontSize } = useFontSize();
   const [view, setView] = useState('calendar');
@@ -23,7 +40,19 @@ function App() {
     copyEventToDates,
     addEventToDates,
     isLoading,
-  } = useEvents(supabase);
+  } = useEvents(user ? supabase : null);
+
+  if (!authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-lg bg-slate-50 dark:bg-slate-900">
+        載入中...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   if (isLoading) {
     return (
