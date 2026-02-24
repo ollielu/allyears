@@ -220,6 +220,56 @@ export function useEvents(supabase) {
     });
   }, [events]);
 
+  // 8. 移動事件 (Drag & Drop)
+  const moveEvent = useCallback(async (eventId, sourceDateKey, targetDateKey) => {
+    // 如果日期沒變，就不做事
+    if (sourceDateKey === targetDateKey) return;
+
+    // 1. 樂觀更新 (Optimistic Update) - 讓畫面先變，不等後端
+    const eventIdStr = String(eventId);
+    setEvents((prev) => {
+      const sourceList = prev[sourceDateKey] || [];
+      const eventToMove = sourceList.find((e) => String(e.id) === eventIdStr);
+      
+      if (!eventToMove) return prev; // 找不到該事件
+
+      // 從舊日期移除
+      const newSourceList = sourceList.filter((e) => String(e.id) !== eventIdStr);
+      
+      // 加入新日期 (更新 dateKey)
+      const newEvent = { ...eventToMove, dateKey: targetDateKey };
+      const targetList = prev[targetDateKey] || [];
+      const newTargetList = [...targetList, newEvent];
+
+      const nextState = {
+        ...prev,
+        [sourceDateKey]: newSourceList,
+        [targetDateKey]: newTargetList,
+      };
+
+      // 清理空陣列
+      if (newSourceList.length === 0) delete nextState[sourceDateKey];
+      
+      return nextState;
+    });
+
+    // 2. 呼叫 Supabase 更新資料庫
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('events')
+          .update({ date_key: targetDateKey }) // 只更新日期欄位
+          .eq('id', eventId);
+        
+        if (error) throw error;
+      } catch (err) {
+        console.error('移動失敗，回復狀態...', err);
+        // 這裡如果失敗應該要 fetchEvents() 補救，暫略
+        fetchEvents();
+      }
+    }
+  }, [supabase, fetchEvents]);
+
   return {
     events,
     isLoading,
@@ -233,5 +283,6 @@ export function useEvents(supabase) {
     batchDeleteEvents,
     copyEventToDates,
     addEventToDates,
+    moveEvent,
   };
 }

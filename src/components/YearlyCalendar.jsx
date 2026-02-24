@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DndContext, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { Sun, Moon, ChevronLeft, ChevronRight, ListTodo } from 'lucide-react';
 import { MonthCard } from './MonthCard';
 import { EventModal } from './EventModal';
@@ -11,12 +12,25 @@ const YEAR_RANGE = Array.from({ length: 11 }, (_, i) => CURRENT_YEAR - 5 + i);
 const MIN_MONTHS = 1;
 const MAX_MONTHS = 6;
 
-export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fontSize, onFontSizeChange, minFontSize = 10, maxFontSize = 28, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent }) {
+export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fontSize, onFontSizeChange, minFontSize = 10, maxFontSize = 28, getEventCount, getPrimaryEventForDate, getEventsForDate, addEvent, updateEvent, deleteEvent, moveEvent }) {
   const [selectedDateKey, setSelectedDateKey] = useState(null);
   const [year, setYear] = useState(CURRENT_YEAR);
   const [weekdayFormat, setWeekdayFormat] = useState('zh');
   const [page, setPage] = useState(1);
   const [monthsPerView, setMonthsPerView] = useState(3);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    })
+  );
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (over && active.id !== over.id && active.data?.current?.event) {
+      moveEvent(active.id, active.data.current.event.dateKey, over.id);
+    }
+  }
 
   const totalPages = Math.ceil(12 / monthsPerView);
   const safePage = Math.min(Math.max(1, page), totalPages);
@@ -166,28 +180,31 @@ export function YearlyCalendar({ isDark, onToggleTheme, onOpenTaskManagement, fo
           </p>
         </div>
 
-        <div
-          className="grid gap-2 sm:gap-4 calendar-font-scale"
-          style={{
-            gridTemplateColumns: `repeat(${Math.min(monthsPerView, 3)}, minmax(0, 1fr))`,
-            fontSize: `${fontSize}px`,
-          }}
-        >
-          {monthsOnPage.map((month) => (
-            <MonthCard
-              key={month}
-              year={year}
-              month={month}
-              isDark={isDark}
-              weekdayFormat={weekdayFormat}
-              getEventCount={getEventCount}
-              getPrimaryEvent={getPrimaryEventForDate}
-              getEventsForDate={getEventsForDate}
-              onDateClick={setSelectedDateKey}
-              showAllEvents={monthsPerView === 1}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div
+            className="grid gap-2 sm:gap-4 calendar-font-scale"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(monthsPerView, 3)}, minmax(0, 1fr))`,
+              fontSize: `${fontSize}px`,
+            }}
+          >
+            {monthsOnPage.map((month) => (
+              <MonthCard
+                key={month}
+                year={year}
+                month={month}
+                isDark={isDark}
+                weekdayFormat={weekdayFormat}
+                getEventCount={getEventCount}
+                getPrimaryEvent={getPrimaryEventForDate}
+                getEventsForDate={getEventsForDate}
+                onDateClick={setSelectedDateKey}
+                showAllEvents={monthsPerView === 1}
+                moveEvent={moveEvent}
+              />
+            ))}
+          </div>
+        </DndContext>
       </div>
 
       {selectedDateKey && (

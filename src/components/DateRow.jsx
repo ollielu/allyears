@@ -1,4 +1,6 @@
 import { useCallback } from 'react';
+import { DroppableDay } from './DroppableDay';
+import { DraggableEvent } from './DraggableEvent';
 
 const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六'];
 const WEEKDAY_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -15,7 +17,7 @@ function getEventColorClass(color, isDark) {
   return map[color] || (isDark ? 'text-slate-300' : 'text-slate-700');
 }
 
-export function DateRow({ day, weekday, weekdayFormat = 'zh', isDark = false, isToday, primaryEvent, eventCount, events, showAllEvents, onClick, isEvenRow }) {
+export function DateRow({ dateKey, day, weekday, weekdayFormat = 'zh', isDark = false, isToday, primaryEvent, eventCount, events, showAllEvents, onClick, isEvenRow }) {
   const handleClick = useCallback(() => {
     if (onClick) onClick();
   }, [onClick]);
@@ -58,27 +60,45 @@ export function DateRow({ day, weekday, weekdayFormat = 'zh', isDark = false, is
         {weekdayLabel}
       </td>
       <td className={`px-1.5 py-0.5 align-top ${eventColorClass}`}>
-        {sortedEvents ? (
-          <ul className="min-w-0 space-y-0.5">
-            {sortedEvents.map((ev) => (
-              <li key={ev.id} className={`text-[11px] flex items-center gap-1.5 ${ev.color ? getEventColorClass(ev.color, isDark) : ''}`}>
-                <span className="shrink-0 text-[10px] opacity-80">{ev.time || '–'}</span>
-                <span className="truncate">{ev.title}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <span className="flex items-center gap-1 min-w-0">
-            <span className="truncate text-[11px]">
-              {primaryEvent ? primaryEvent.title : ''}
-            </span>
-            {eventCount > 1 && (
-              <span className="shrink-0 flex items-center justify-center min-w-[14px] h-[14px] text-[9px] font-medium text-white bg-red-500 rounded-full">
-                {eventCount}
+        <DroppableDay
+          dateKey={dateKey}
+          className="block min-w-0"
+        >
+          {sortedEvents ? (
+            <ul className="min-w-0 space-y-0.5">
+              {sortedEvents.map((ev) => (
+                <DraggableEvent key={ev.id} event={ev}>
+                  <li className={`text-[11px] flex items-center gap-1.5 ${ev.color ? getEventColorClass(ev.color, isDark) : ''}`}>
+                    <span className="shrink-0 text-[10px] opacity-80">{ev.time || '–'}</span>
+                    <span className="truncate">{ev.title}</span>
+                  </li>
+                </DraggableEvent>
+              ))}
+            </ul>
+          ) : (
+            primaryEvent ? (
+              <DraggableEvent event={primaryEvent}>
+                <span className="flex items-center gap-1 min-w-0">
+                  <span className="truncate text-[11px]">{primaryEvent.title}</span>
+                  {eventCount > 1 && (
+                    <span className="shrink-0 flex items-center justify-center min-w-[14px] h-[14px] text-[9px] font-medium text-white bg-red-500 rounded-full">
+                      {eventCount}
+                    </span>
+                  )}
+                </span>
+              </DraggableEvent>
+            ) : (
+              <span className="flex items-center gap-1 min-w-0">
+                <span className="truncate text-[11px]" />
+                {eventCount > 1 && (
+                  <span className="shrink-0 flex items-center justify-center min-w-[14px] h-[14px] text-[9px] font-medium text-white bg-red-500 rounded-full">
+                    {eventCount}
+                  </span>
+                )}
               </span>
-            )}
-          </span>
-        )}
+            )
+          )}
+        </DroppableDay>
       </td>
     </tr>
   );

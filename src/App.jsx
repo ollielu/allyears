@@ -43,6 +43,7 @@ function App() {
     addEvent,
     updateEvent,
     deleteEvent,
+    moveEvent,
     getAllEventsList,
     batchDeleteEvents,
     copyEventToDates,
@@ -114,6 +115,7 @@ function App() {
           addEvent={addEvent}
           updateEvent={updateEvent}
           deleteEvent={deleteEvent}
+          moveEvent={moveEvent}
         />
       ) : (
         <TaskManagement

@@ -7,7 +7,7 @@ import { getTodayKey } from '../types/event';
  * @param {Object} props
  * @param {boolean} props.showAllEvents - 為 true 時該日顯示所有事件（單月模式）
  */
-export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventCount, getPrimaryEvent, getEventsForDate, onDateClick, showAllEvents = false }) {
+export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventCount, getPrimaryEvent, getEventsForDate, onDateClick, showAllEvents = false, moveEvent }) {
   const todayKey = getTodayKey();
 
   const { days, monthName } = useMemo(() => {
@@ -40,6 +40,7 @@ export function MonthCard({ year, month, isDark, weekdayFormat = 'zh', getEventC
             return (
               <DateRow
                 key={day}
+                dateKey={dateKey}
                 day={day}
                 weekday={weekday}
                 weekdayFormat={weekdayFormat}
