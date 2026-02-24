@@ -56,7 +56,12 @@ export function UserMenu({ session, onLogout }) {
             </p>
           </div>
           
-          
+          <button
+            onClick={onLogout}
+            className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            登出
+          </button>
         </div>
       )}
     </div>
